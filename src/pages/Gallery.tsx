@@ -6,16 +6,15 @@ import { useEffect } from "react";
 export default function Gallery() {
   const { t } = useLanguage();
 
-  // --- Injection du CSS ---
+  // Injection du CSS pour l'animation de l’éclipse
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
       .eclipse-container {
-        position: relative;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 320px;
+        height: 300px;
         margin-bottom: 3rem;
       }
 
@@ -26,7 +25,6 @@ export default function Gallery() {
         border-radius: 50%;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 0 25px rgba(255,255,255,0.3);
       }
 
       .moon::before {
@@ -55,44 +53,6 @@ export default function Gallery() {
           box-shadow: none;
         }
       }
-
-      /* --- Texte orbital --- */
-      .orbit {
-        position: absolute;
-        width: 300px;
-        height: 300px;
-        border-radius: 50%;
-        animation: rotateOrbit 10s linear infinite;
-      }
-
-      .orbit span {
-        position: absolute;
-        left: 50%;
-        top: 0;
-        transform-origin: 0 150px;
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #FFD93D;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        animation: textGlow 3s ease-in-out infinite alternate;
-      }
-
-      @keyframes rotateOrbit {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-
-      @keyframes textGlow {
-        from {
-          text-shadow: 0 0 10px #ffd93d, 0 0 20px #ffd93d;
-          opacity: 0.9;
-        }
-        to {
-          text-shadow: 0 0 20px #fff, 0 0 40px #ffd93d;
-          opacity: 1;
-        }
-      }
     `;
     document.head.appendChild(style);
     return () => {
@@ -103,7 +63,7 @@ export default function Gallery() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#002D5B] to-[#004080] pt-24 pb-16 px-4">
       <div className="max-w-4xl mx-auto text-center">
-        {/* --- Titre --- */}
+        {/* Titre */}
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -112,20 +72,17 @@ export default function Gallery() {
           {t("gallery") || "Galerie Photos"}
         </motion.h1>
 
-        {/* --- Animation d’éclipse avec texte orbital --- */}
+        {/* Animation d’éclipse */}
         <div className="eclipse-container">
-          <div className="orbit">
-            <span>Éclipse&nbsp;de&nbsp;souvenirs</span>
-          </div>
           <div className="moon"></div>
         </div>
 
-        {/* --- Description --- */}
+        {/* Texte descriptif */}
         <p className="text-white/90 mb-10 text-lg">
           Retrouvez toutes les photos de l’événement directement sur Google Drive 👇
         </p>
 
-        {/* --- Bouton Google Drive --- */}
+        {/* Bouton lien vers le Drive */}
         <motion.a
           href="https://drive.google.com/drive/folders/12XDJwkhnKapS-ijWVY4VnB-fKft-V_Ye?usp=drive_link"
           target="_blank"
