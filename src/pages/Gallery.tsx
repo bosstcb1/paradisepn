@@ -6,18 +6,17 @@ import { useEffect } from "react";
 export default function Gallery() {
   const { t } = useLanguage();
 
-  // --- Injection du CSS de l’animation ---
+  // --- Injection du CSS ---
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
       .eclipse-container {
+        position: relative;
         display: flex;
-        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 320px;
         margin-bottom: 3rem;
-        position: relative;
       }
 
       .moon {
@@ -27,7 +26,7 @@ export default function Gallery() {
         border-radius: 50%;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 0 25px rgba(255,255,255,0.2);
+        box-shadow: 0 0 25px rgba(255,255,255,0.3);
       }
 
       .moon::before {
@@ -57,16 +56,31 @@ export default function Gallery() {
         }
       }
 
-      /* --- Texte autour de l’éclipse --- */
-      .eclipse-text {
+      /* --- Texte orbital --- */
+      .orbit {
         position: absolute;
-        top: -60px;
-        font-size: 1.5rem;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        animation: rotateOrbit 10s linear infinite;
+      }
+
+      .orbit span {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        transform-origin: 0 150px;
+        font-size: 1.2rem;
         font-weight: 600;
         color: #FFD93D;
+        letter-spacing: 2px;
         text-transform: uppercase;
-        letter-spacing: 3px;
         animation: textGlow 3s ease-in-out infinite alternate;
+      }
+
+      @keyframes rotateOrbit {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
       }
 
       @keyframes textGlow {
@@ -98,9 +112,11 @@ export default function Gallery() {
           {t("gallery") || "Galerie Photos"}
         </motion.h1>
 
-        {/* --- Animation d’éclipse --- */}
+        {/* --- Animation d’éclipse avec texte orbital --- */}
         <div className="eclipse-container">
-          <div className="eclipse-text">Éclipse de souvenirs</div>
+          <div className="orbit">
+            <span>Éclipse&nbsp;de&nbsp;souvenirs</span>
+          </div>
           <div className="moon"></div>
         </div>
 
