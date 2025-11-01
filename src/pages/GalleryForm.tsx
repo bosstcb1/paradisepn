@@ -19,31 +19,45 @@ export default function GalleryForm({ onSubmit }: GalleryFormProps) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    setSuccessMessage('');
+
+    console.log('Submitting form:', formData); // 🔹 Log du formulaire
 
     try {
-      const { error: dbError } = await supabase
+      const { data, error: dbError } = await supabase
         .from('visitors')
-        .insert([formData]);
+        .insert([formData])
+        .select(); // Retourne les données insérées
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('DB Error:', dbError);
+        setError('Une erreur est survenue. Vérifiez la console pour plus d’infos.');
+        return;
+      }
 
+      console.log('Inserted data:', data); // 🔹 Log des données insérées
       localStorage.setItem('galleryAccess', 'true');
       localStorage.setItem('visitorEmail', formData.email);
+
+      setSuccessMessage('Merci ! Vos informations ont été enregistrées.');
       onSubmit();
     } catch (err) {
-      console.error('Error submitting form:', err);
-      setError('Une erreur est survenue. Veuillez réessayer.');
+      console.error('Unexpected Error:', err);
+      setError('Une erreur inattendue est survenue. Veuillez réessayer.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -60,13 +74,14 @@ export default function GalleryForm({ onSubmit }: GalleryFormProps) {
       >
         <div className="bg-white rounded-lg shadow-2xl p-8">
           <h1 className="text-3xl font-bold text-[#002D5B] mb-6 text-center">
-            {t('formTitle')}
+            {t('formTitle') || 'Formulaire d’accès à la galerie'}
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Nom */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('lastName')} *
+                {t('lastName') || 'Nom'} *
               </label>
               <input
                 type="text"
@@ -78,9 +93,10 @@ export default function GalleryForm({ onSubmit }: GalleryFormProps) {
               />
             </div>
 
+            {/* Prénoms */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('firstNames')} *
+                {t('firstNames') || 'Prénoms'} *
               </label>
               <input
                 type="text"
@@ -92,6 +108,7 @@ export default function GalleryForm({ onSubmit }: GalleryFormProps) {
               />
             </div>
 
+            {/* WhatsApp */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 WhatsApp *
@@ -107,6 +124,7 @@ export default function GalleryForm({ onSubmit }: GalleryFormProps) {
               />
             </div>
 
+            {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Email *
@@ -121,9 +139,10 @@ export default function GalleryForm({ onSubmit }: GalleryFormProps) {
               />
             </div>
 
+            {/* Témoignage */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('testimonial')}
+                {t('testimonial') || 'Témoignage'}
               </label>
               <textarea
                 name="temoignage"
@@ -134,9 +153,17 @@ export default function GalleryForm({ onSubmit }: GalleryFormProps) {
               />
             </div>
 
+            {/* Erreur */}
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
                 {error}
+              </div>
+            )}
+
+            {/* Succès */}
+            {successMessage && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
+                {successMessage}
               </div>
             )}
 
@@ -145,7 +172,7 @@ export default function GalleryForm({ onSubmit }: GalleryFormProps) {
               disabled={isSubmitting}
               className="w-full bg-[#FFD93D] text-[#002D5B] py-3 rounded-full font-bold hover:bg-yellow-300 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Envoi en cours...' : t('submit')}
+              {isSubmitting ? 'Envoi en cours...' : t('submit') || 'Envoyer'}
             </button>
           </form>
         </div>
