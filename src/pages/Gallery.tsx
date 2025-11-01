@@ -1,173 +1,202 @@
-import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
-// Assurez-vous que ce chemin d'importation est correct
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import { supabase } from '../lib/supabase';
+import { Visitor } from '../types';
+import { ExternalLink } from 'lucide-react';
 
-// --- Définition des URL d'images (Déplacé hors du composant pour la propreté) ---
-const IMAGES = [
-  'https://i.ibb.co/PzmvyJ3f/IMG-6250.jpg',
-  'https://i.ibb.co/0RC5D9Vn/IMG-6249.jpg',
-  'https://i.ibb.co/zH4h5mrb/IMG-6248.jpg',
-  'https://i.ibb.co/7JF8YY86/IMG-6245.jpg',
-  'https://i.ibb.co/Y4vPD9tk/IMG-6244.jpg',
-  'https://i.ibb.co/k2JKcD2p/IMG-6242.jpg',
-  'https://i.ibb.co/YTYmwRYX/IMG-6240.jpg',
-  'https://i.ibb.co/m5F214rs/IMG-6236.jpg',
-  'https://i.ibb.co/6csr87kr/IMG-6235.jpg',
-  'https://i.ibb.co/NnxZwNkd/IMG-6233.jpg',
-];
-
-// --- Composant principal de la Galerie ---
-export default function Gallery() {
+export default function GalleryPage() {
   const { t } = useLanguage();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formData, setFormData] = useState<Visitor>({
+    nom: '',
+    prenoms: '',
+    whatsapp: '',
+    email: '',
+    temoignage: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  // Utilisation de useCallback pour les fonctions qui ne changent pas entre les rendus
-  const handleImageClick = useCallback((image: string, index: number) => {
-    setSelectedImage(image);
-    setCurrentIndex(index);
-  }, []);
+  // --- Gestion de la soumission du formulaire ---
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
 
-  const handleNext = useCallback(() => {
-    const nextIndex = (currentIndex + 1) % IMAGES.length;
-    setCurrentIndex(nextIndex);
-    setSelectedImage(IMAGES[nextIndex]);
-  }, [currentIndex]);
+    try {
+      const { error: dbError } = await supabase
+        .from('visitors')
+        .insert([formData]);
+      if (dbError) throw dbError;
 
-  const handlePrev = useCallback(() => {
-    const prevIndex = (currentIndex - 1 + IMAGES.length) % IMAGES.length;
-    setCurrentIndex(prevIndex);
-    setSelectedImage(IMAGES[prevIndex]);
-  }, [currentIndex]);
-
-  const handleDownload = (url: string) => {
-    // Ouvre l'image dans un nouvel onglet, permettant à l'utilisateur de la télécharger manuellement.
-    // Pour un téléchargement direct, une implémentation plus complexe serait nécessaire.
-    window.open(url, '_blank');
+      localStorage.setItem('galleryAccess', 'true');
+      localStorage.setItem('visitorEmail', formData.email);
+      setFormSubmitted(true); // On passe à la galerie
+    } catch (err) {
+      console.error('Error submitting form:', err);
+      setError('Une erreur est survenue. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-[#002D5B] to-[#004080] pt-24 pb-16 px-4">
-      <div className="max-w-6xl mx-auto text-center">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold text-white mb-8"
-        >
-          {t('gallery')}
-        </motion.h1>
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-        {/* --- Grille des images --- */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
-          {IMAGES.map((image, index) => (
-            <motion.div
-              key={index}
-              whileHover={{ scale: 1.05 }}
-              className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
-              onClick={() => handleImageClick(image, index)}
-            >
-              <img
-                src={image}
-                alt={`Photo ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy" // Ajout de lazy loading
-              />
-              {/* Overlay pour le téléchargement */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <Download
-                  className="w-8 h-8 text-white hover:text-yellow-400 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Empêche l'ouverture de la modale
-                    handleDownload(image);
-                  }}
+  // --- Rendu ---
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#002D5B] to-[#004080] pt-24 pb-16 px-4 flex items-center justify-center">
+      {!formSubmitted ? (
+        // --- Formulaire ---
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="max-w-2xl w-full"
+        >
+          <div className="bg-white rounded-lg shadow-2xl p-8">
+            <h1 className="text-3xl font-bold text-[#002D5B] mb-6 text-center">
+              {t('formTitle')}
+            </h1>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t('lastName')} *
+                </label>
+                <input
+                  type="text"
+                  name="nom"
+                  value={formData.nom}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD93D] outline-none transition-all"
                 />
               </div>
-            </motion.div>
-          ))}
-        </div>
 
-        {/* --- Bouton Voir toutes les photos --- */}
-        <motion.a
-          href="https://exemple.com/toutes-les-photos" // 🔗 Remplace par ton vrai lien
-          target="_blank"
-          rel="noopener noreferrer"
-          whileHover={{ scale: 1.05 }}
-          className="inline-block bg-[#FFD93D] text-[#002D5B] px-6 py-3 rounded-full font-semibold hover:bg-yellow-300 transition-colors duration-200 shadow-lg"
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t('firstNames')} *
+                </label>
+                <input
+                  type="text"
+                  name="prenoms"
+                  value={formData.prenoms}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD93D] outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  WhatsApp *
+                </label>
+                <input
+                  type="tel"
+                  name="whatsapp"
+                  value={formData.whatsapp}
+                  onChange={handleChange}
+                  required
+                  placeholder="+229 XX XX XX XX"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD93D] outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD93D] outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t('testimonial')}
+                </label>
+                <textarea
+                  name="temoignage"
+                  value={formData.temoignage}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD93D] outline-none transition-all resize-none"
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-[#FFD93D] text-[#002D5B] py-3 rounded-full font-bold hover:bg-yellow-300 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Envoi en cours...' : t('submit')}
+              </button>
+            </form>
+          </div>
+        </motion.div>
+      ) : (
+        // --- Galerie après validation ---
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center max-w-4xl mx-auto"
         >
-          Voir toutes les photos
-        </motion.a>
-      </div>
+          <h1 className="text-4xl font-bold text-white mb-6">
+            {t('gallery') || 'Galerie Photos'}
+          </h1>
 
-      {/* --- Modale plein écran (Lightbox) --- */}
-      <AnimatePresence>
-        {selectedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedImage(null)} // Fermer en cliquant sur le fond
+          <p className="text-white/90 mb-10 text-lg">
+            Retrouvez toutes les photos de l’événement directement sur Google Drive 👇
+          </p>
+
+          {/* Animation éclipse/lune */}
+          <div className="mb-12 flex justify-center">
+            <div className="moon w-48 h-48 rounded-full bg-black relative overflow-hidden shadow-lg">
+              <div className="crescent absolute top-0 left-0 w-full h-full bg-white rounded-full animate-eclipse"></div>
+            </div>
+          </div>
+
+          {/* Bouton Drive */}
+          <motion.a
+            href="https://drive.google.com/drive/folders/12XDJwkhnKapS-ijWVY4VnB-fKft-V_Ye?usp=drive_link"
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.05 }}
+            className="inline-flex items-center gap-2 bg-[#FFD93D] text-[#002D5B] px-6 py-3 rounded-full font-semibold hover:bg-yellow-300 transition-colors duration-200 shadow-lg"
           >
-            {/* Bouton Fermer */}
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-4 right-4 text-white hover:text-gray-300 z-50 p-2"
-              aria-label="Fermer la galerie"
-            >
-              <X className="w-8 h-8" />
-            </button>
+            <ExternalLink className="w-5 h-5" />
+            Voir toutes les photos
+          </motion.a>
+        </motion.div>
+      )}
 
-            {/* Bouton Précédent */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrev();
-              }}
-              className="absolute left-4 text-white hover:text-gray-300 z-50 p-2 md:left-8"
-              aria-label="Image précédente"
-            >
-              <ChevronLeft className="w-10 h-10 md:w-12 md:h-12" />
-            </button>
-
-            {/* Bouton Suivant */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNext();
-              }}
-              className="absolute right-4 text-white hover:text-gray-300 z-50 p-2 md:right-8"
-              aria-label="Image suivante"
-            >
-              <ChevronRight className="w-10 h-10 md:w-12 md:h-12" />
-            </button>
-
-            {/* Image en plein écran */}
-            <motion.img
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              src={selectedImage}
-              alt={`Photo ${currentIndex + 1}`}
-              className="max-w-full max-h-full object-contain cursor-default"
-              onClick={(e) => e.stopPropagation()} // Empêche la fermeture lors du clic sur l'image
-            />
-
-            {/* Bouton Télécharger */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDownload(selectedImage);
-              }}
-              className="absolute bottom-4 right-4 bg-[#FFD93D] text-[#002D5B] px-4 py-2 md:px-6 md:py-3 rounded-full font-semibold hover:bg-yellow-300 transition-colors duration-200 flex items-center gap-2 shadow-lg"
-              aria-label="Télécharger l'image"
-            >
-              <Download className="w-5 h-5" />
-              {t('downloadImage')}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* --- CSS animation éclipse (ajoute dans ton global.css ou style jsx) --- */}
+      <style jsx>{`
+        @keyframes eclipse {
+          0% { transform: translateX(50%) scale(0.9); }
+          50% { transform: translateX(0%) scale(1.02); }
+          100% { transform: translateX(-50%) scale(0.9); }
+        }
+        .animate-eclipse {
+          animation: eclipse 3.2s linear infinite alternate;
+        }
+      `}</style>
     </div>
   );
 }
