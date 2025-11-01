@@ -6,16 +6,18 @@ import { useEffect } from "react";
 export default function Gallery() {
   const { t } = useLanguage();
 
-  // Injection du CSS pour l'animation de l’éclipse
+  // --- Injection du CSS de l’animation ---
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
       .eclipse-container {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 300px;
+        height: 320px;
         margin-bottom: 3rem;
+        position: relative;
       }
 
       .moon {
@@ -25,6 +27,7 @@ export default function Gallery() {
         border-radius: 50%;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 0 25px rgba(255,255,255,0.2);
       }
 
       .moon::before {
@@ -53,6 +56,29 @@ export default function Gallery() {
           box-shadow: none;
         }
       }
+
+      /* --- Texte autour de l’éclipse --- */
+      .eclipse-text {
+        position: absolute;
+        top: -60px;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #FFD93D;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        animation: textGlow 3s ease-in-out infinite alternate;
+      }
+
+      @keyframes textGlow {
+        from {
+          text-shadow: 0 0 10px #ffd93d, 0 0 20px #ffd93d;
+          opacity: 0.9;
+        }
+        to {
+          text-shadow: 0 0 20px #fff, 0 0 40px #ffd93d;
+          opacity: 1;
+        }
+      }
     `;
     document.head.appendChild(style);
     return () => {
@@ -63,7 +89,7 @@ export default function Gallery() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#002D5B] to-[#004080] pt-24 pb-16 px-4">
       <div className="max-w-4xl mx-auto text-center">
-        {/* Titre */}
+        {/* --- Titre --- */}
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -72,17 +98,18 @@ export default function Gallery() {
           {t("gallery") || "Galerie Photos"}
         </motion.h1>
 
-        {/* Animation d’éclipse */}
+        {/* --- Animation d’éclipse --- */}
         <div className="eclipse-container">
+          <div className="eclipse-text">Éclipse de souvenirs</div>
           <div className="moon"></div>
         </div>
 
-        {/* Texte descriptif */}
+        {/* --- Description --- */}
         <p className="text-white/90 mb-10 text-lg">
           Retrouvez toutes les photos de l’événement directement sur Google Drive 👇
         </p>
 
-        {/* Bouton lien vers le Drive */}
+        {/* --- Bouton Google Drive --- */}
         <motion.a
           href="https://drive.google.com/drive/folders/12XDJwkhnKapS-ijWVY4VnB-fKft-V_Ye?usp=drive_link"
           target="_blank"
